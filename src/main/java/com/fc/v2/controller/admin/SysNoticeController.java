@@ -198,7 +198,7 @@ public class SysNoticeController extends BaseController{
     }
 
 	/**
-     * 修改保存
+     * 修改保存（同步更新接收人快照）
      */
 	@ApiOperation(value = "修改保存", notes = "修改保存")
     @SaCheckPermission("gen:sysNotice:edit")
@@ -206,7 +206,7 @@ public class SysNoticeController extends BaseController{
     @ResponseBody
     public AjaxResult editSave(SysNotice record)
     {
-        return toAjax(sysNoticeService.updateByPrimaryKeySelective(record));
+        return toAjax(sysNoticeService.updateNoticeWithScope(record));
     }
 
 

@@ -1,7 +1,6 @@
 package com.fc.v2.service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -135,6 +134,56 @@ public class SysNoticeService implements BaseService<SysNotice, SysNoticeExample
 	}
 
 	/**
+	 * 编辑公告并同步接收人（当 scopeType/scopeIds 变更时必须使用此方法）
+	 * 流程：更新公告字段 → 删除旧 notice_user → 重新解析目标用户 → 批量插入新 notice_user
+	 */
+	@Transactional
+	public int updateNoticeWithScope(SysNotice record) {
+		// 如果前端没传 scopeType，从数据库读取当前值（兼容旧表单）
+		if(record.getScopeType() == null) {
+			SysNotice existing = sysNoticeMapper.selectByPrimaryKey(record.getId());
+			if(existing != null) {
+				record.setScopeType(existing.getScopeType());
+				record.setScopeIds(existing.getScopeIds());
+			} else {
+				record.setScopeType(0);
+			}
+		}
+		// scopeType=0 时 scopeIds 无意义，清空
+		if(record.getScopeType() == 0) {
+			record.setScopeIds(null);
+		}
+
+		// 1. 更新公告主表字段
+		sysNoticeMapper.updateByPrimaryKeySelective(record);
+
+		// 2. 删除旧的接收人快照
+		noticeDao.deleteByNoticeId(record.getId());
+
+		// 3. 根据新的 scopeType/scopeIds 重新解析目标用户
+		List<String> targetUserIds = resolveTargetUserIds(record.getScopeType(), record.getScopeIds());
+
+		// 4. 批量插入新的 notice_user 记录
+		if(targetUserIds != null && !targetUserIds.isEmpty()) {
+			List<SysNoticeUser> noticeUserList = new ArrayList<>();
+			for (String userId : targetUserIds) {
+				SysNoticeUser noticeUser = new SysNoticeUser();
+				noticeUser.setId(SnowflakeIdWorker.getUUID());
+				noticeUser.setNoticeId(record.getId());
+				noticeUser.setUserId(userId);
+				noticeUser.setState(0);
+				noticeUserList.add(noticeUser);
+			}
+			int batchSize = 500;
+			for(int i = 0; i < noticeUserList.size(); i += batchSize) {
+				int end = Math.min(i + batchSize, noticeUserList.size());
+				noticeDao.batchInsertNoticeUser(noticeUserList.subList(i, end));
+			}
+		}
+		return 1;
+	}
+
+	/**
 	 * 添加公告（支持定向发布）
 	 * scopeType: 0-全部用户, 1-指定角色, 2-指定部门, 3-指定用户
 	 */
@@ -196,18 +245,34 @@ public class SysNoticeService implements BaseService<SysNotice, SysNoticeExample
 			return userIds;
 		} else if(scopeType == 1) {
 			// 指定角色
-			List<String> roleIds = Arrays.asList(scopeIds.split(","));
+			List<String> roleIds = new ArrayList<>();
+			for(String s : scopeIds.split(",")) {
+				String trimmed = s.trim();
+				if(!trimmed.isEmpty()) {
+					roleIds.add(trimmed);
+				}
+			}
 			return noticeDao.selectUserIdsByRoleIds(roleIds);
 		} else if(scopeType == 2) {
 			// 指定部门
 			List<Integer> deptIds = new ArrayList<>();
 			for(String s : scopeIds.split(",")) {
-				deptIds.add(Integer.parseInt(s.trim()));
+				String trimmed = s.trim();
+				if(!trimmed.isEmpty()) {
+					deptIds.add(Integer.parseInt(trimmed));
+				}
 			}
 			return noticeDao.selectUserIdsByDeptIds(deptIds);
 		} else if(scopeType == 3) {
-			// 指定用户
-			return Arrays.asList(scopeIds.split(","));
+			// 指定用户：必须 trim，防止 "uid1, uid2" 拆出 " uid2"
+			List<String> userIds = new ArrayList<>();
+			for(String s : scopeIds.split(",")) {
+				String trimmed = s.trim();
+				if(!trimmed.isEmpty()) {
+					userIds.add(trimmed);
+				}
+			}
+			return userIds;
 		}
 		return new ArrayList<>();
 	}
@@ -404,18 +469,13 @@ public class SysNoticeService implements BaseService<SysNotice, SysNoticeExample
 	}
 
 	/**
-	 * 获取最新8条公告（排除已撤回）
+	 * 获取当前用户最新8条公告（排除已撤回，通过 notice_user 过滤接收人）
+	 * @param userId 当前用户ID
 	 * @return
 	 */
-	public List<SysNotice>  getNEW(){
-        SysNoticeExample testExample=new SysNoticeExample();
-        SysNoticeExample.Criteria criteria = testExample.createCriteria();
-        criteria.andStatusNotEqualTo(1);
-        testExample.setOrderByClause("id DESC");
-        PageHelper.startPage(1, 8);
-        List<SysNotice> list= sysNoticeMapper.selectByExample(testExample);
-        return  list;
-	 }
+	public List<SysNotice> getNEW(String userId){
+		return noticeDao.selectUserNewestNotices(userId, 8);
+	}
 
 
 }

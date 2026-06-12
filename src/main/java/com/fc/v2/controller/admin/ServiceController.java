@@ -5,6 +5,7 @@ import com.aizuda.monitor.OshiMonitor;
 import com.fc.v2.common.base.BaseController;
 import com.fc.v2.model.auto.SysNotice;
 import com.fc.v2.model.auto.TsysOperLog;
+import com.fc.v2.satoken.SaTokenUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.stereotype.Controller;
@@ -46,7 +47,7 @@ public class ServiceController extends BaseController {
 	@GetMapping("/view")
 	@SaCheckPermission("system:service:view")
 	public String view(ModelMap model) {
-		List<SysNotice> sysNotices = sysNoticeService.getNEW();
+		List<SysNotice> sysNotices = sysNoticeService.getNEW(SaTokenUtil.getUserId());
 		List<TsysOperLog> sysOperLog = sysOperLogService.getNEW();
 		if (sysNotices == null || sysNotices.size() <= 0) {
 			SysNotice sysNotice = new SysNotice();

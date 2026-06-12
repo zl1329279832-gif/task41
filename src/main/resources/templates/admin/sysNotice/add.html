@@ -32,6 +32,26 @@
                     </div>
                 </div>
 
+                <div class="layui-form-item">
+                    <label class="layui-form-label">发布范围</label>
+                    <div class="layui-input-block">
+                        <select name="scopeType" id="scopeType" lay-filter="scopeType">
+                            <option value="0" selected>全部用户</option>
+                            <option value="1">指定角色</option>
+                            <option value="2">指定部门</option>
+                            <option value="3">指定用户</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="layui-form-item" id="scopeIdsBox" style="display:none;">
+                    <label class="layui-form-label">范围ID</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="scopeIds" placeholder="多个ID用逗号分隔，如：1,2,3" autocomplete="off" class="layui-input">
+                        <div class="layui-form-mid layui-word-aux">指定角色填角色ID，指定部门填部门ID，指定用户填用户ID</div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -54,6 +74,15 @@
         let form = layui.form;
         let $ = layui.jquery;
         let MODULE_PATH = rootPath+"/SysNoticeController";
+
+        // 发布范围切换：scopeType != 0 时显示 scopeIds 输入框
+        form.on('select(scopeType)', function(data){
+            if(data.value === '0') {
+                $('#scopeIdsBox').hide();
+            } else {
+                $('#scopeIdsBox').show();
+            }
+        });
         //名称验证
         form.verify({
             interName: function(value){

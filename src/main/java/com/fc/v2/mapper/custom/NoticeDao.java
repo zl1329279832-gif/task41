@@ -64,4 +64,19 @@ public interface NoticeDao {
      * @return 统计VO
      */
     NoticeReadStatVO selectReadStatByNoticeId(@Param("noticeId") String noticeId);
+
+    /**
+     * 根据公告ID删除 notice_user 记录（编辑时重新解析接收人前调用）
+     * @param noticeId 公告ID
+     * @return 删除行数
+     */
+    int deleteByNoticeId(@Param("noticeId") String noticeId);
+
+    /**
+     * 查询用户最新N条公告（排除已撤回，JOIN notice_user 过滤接收人）
+     * @param userId 用户ID
+     * @param limit 数量限制
+     * @return 公告列表
+     */
+    List<SysNotice> selectUserNewestNotices(@Param("userId") String userId, @Param("limit") int limit);
 }

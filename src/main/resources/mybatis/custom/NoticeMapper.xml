@@ -81,4 +81,23 @@
     WHERE notice_id = #{noticeId}
   </select>
 
+  <!-- 根据公告ID删除 notice_user 记录 -->
+  <delete id="deleteByNoticeId">
+    DELETE FROM t_sys_notice_user WHERE notice_id = #{noticeId}
+  </delete>
+
+  <!-- 查询用户最新N条公告（排除已撤回，JOIN notice_user 过滤） -->
+  <select id="selectUserNewestNotices" resultType="com.fc.v2.model.auto.SysNotice">
+    SELECT n.id, n.title, n.content, n.type, n.create_id AS createId,
+           n.create_username AS createUsername, n.create_time AS createTime,
+           n.status, n.scope_type AS scopeType,
+           nu.state, nu.read_time AS readTime
+    FROM t_sys_notice n
+    INNER JOIN t_sys_notice_user nu ON n.id = nu.notice_id
+    WHERE nu.user_id = #{userId}
+      AND n.status != 1
+    ORDER BY n.create_time DESC
+    LIMIT #{limit}
+  </select>
+
 </mapper>
