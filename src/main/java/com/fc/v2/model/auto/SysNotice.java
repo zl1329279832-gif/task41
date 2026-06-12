@@ -38,8 +38,17 @@ public class SysNotice implements Serializable {
 	/** 发信时间 **/
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
 	private Date createTime;
-		
-		
+
+	/** 状态: 0=draft, 1=published, 2=recalled **/
+	private Integer status;
+
+	/** 发送范围: 0=all, 1=by_role, 2=by_dept, 3=by_user **/
+	private Integer scope;
+
+	/** 目标IDs: 逗号分隔 **/
+	private String targetIds;
+
+
 	public String getId() {
         return id;
     }
@@ -101,15 +110,40 @@ public class SysNotice implements Serializable {
     public void setCreateTime(Date createTime) {
         this.createTime = createTime;
     }
-	 
-			
+
+
+	public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
+	public Integer getScope() {
+        return scope;
+    }
+
+    public void setScope(Integer scope) {
+        this.scope = scope;
+    }
+
+	public String getTargetIds() {
+        return targetIds;
+    }
+
+    public void setTargetIds(String targetIds) {
+        this.targetIds = targetIds;
+    }
+
+
 	public SysNotice() {
         super();
     }
     
 																																					
-	public SysNotice(String id,String title,String content,Integer type,String createId,String createUsername,Date createTime) {
-	
+	public SysNotice(String id,String title,String content,Integer type,String createId,String createUsername,Date createTime,Integer status,Integer scope,String targetIds) {
+
 		this.id = id;
 		this.title = title;
 		this.content = content;
@@ -117,6 +151,9 @@ public class SysNotice implements Serializable {
 		this.createId = createId;
 		this.createUsername = createUsername;
 		this.createTime = createTime;
+		this.status = status;
+		this.scope = scope;
+		this.targetIds = targetIds;
 	}
 
     /**

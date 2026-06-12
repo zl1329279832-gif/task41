@@ -1,7 +1,10 @@
 package com.fc.v2.model.auto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.io.Serializable;
 import java.lang.Integer;
+import java.util.Date;
 
 /**
  * 公告_用户外键 SysNoticeUser 
@@ -25,6 +28,10 @@ public class SysNoticeUser implements Serializable {
 		
 	/** 0未阅读 1 阅读 **/
 	private Integer state;
+
+	/** 阅读时间 **/
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+	private Date readTime;
 		
 		
 	public String getId() {
@@ -61,20 +68,29 @@ public class SysNoticeUser implements Serializable {
     public void setState(Integer state) {
         this.state = state;
     }
-	 
-			
+
+	public Date getReadTime() {
+        return readTime;
+    }
+
+    public void setReadTime(Date readTime) {
+        this.readTime = readTime;
+    }
+
+
 	public SysNoticeUser() {
         super();
     }
     
 																						
-	public SysNoticeUser(String id,String noticeId,String userId,Integer state) {
-	
+	public SysNoticeUser(String id,String noticeId,String userId,Integer state,Date readTime) {
+
 		this.id = id;
 		this.noticeId = noticeId;
 		this.userId = userId;
 		this.state = state;
-		
+		this.readTime = readTime;
+
 	}
 	
 }

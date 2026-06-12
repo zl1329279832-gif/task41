@@ -6,6 +6,7 @@
     <result column="notice_id" jdbcType="VARCHAR" property="noticeId" />
     <result column="user_id" jdbcType="VARCHAR" property="userId" />
     <result column="state" jdbcType="INTEGER" property="state" />
+    <result column="read_time" jdbcType="TIMESTAMP" property="readTime" />
   </resultMap>
   <sql id="Example_Where_Clause">
     <where>
@@ -69,7 +70,8 @@
 	  	  	      	id,
        	  	      	notice_id,
        	  	      	user_id,
-       	  	    	  	state
+       	  	    	  	state,
+       	  	      	read_time
        	</sql>
   <select id="selectByExample" parameterType="com.fc.v2.model.auto.SysNoticeUserExample" resultMap="BaseResultMap">
     select
@@ -108,13 +110,15 @@
       	  	       id,
        	  	       notice_id,
        	  	       user_id,
-       	  	    	  state
+       	  	    	  state,
+       	  	       read_time
        	    )
     values (
 	  	  	      	#{id,jdbcType=VARCHAR},
        	  	      	#{noticeId,jdbcType=VARCHAR},
        	  	      	#{userId,jdbcType=VARCHAR},
-       	  	    	  #{state,jdbcType=INTEGER}
+       	  	    	  #{state,jdbcType=INTEGER},
+       	  	      	#{readTime,jdbcType=TIMESTAMP}
        	    )
   </insert>
   
@@ -140,7 +144,11 @@
       <if test="state != null">
         state,
       </if>
-      
+
+      <if test="readTime != null">
+        read_time,
+      </if>
+
          </trim>
     <trim prefix="values (" suffix=")" suffixOverrides=",">
           <if test="id != null">
@@ -154,6 +162,9 @@
       </if>
           <if test="state != null">
         #{state,jdbcType=INTEGER},
+      </if>
+          <if test="readTime != null">
+        #{readTime,jdbcType=TIMESTAMP},
       </if>
         </trim>
   </insert>
@@ -180,21 +191,25 @@
           <if test="record.state != null">
         state = #{record.state,jdbcType=INTEGER},
       </if>
-         
+          <if test="record.readTime != null">
+        read_time = #{record.readTime,jdbcType=TIMESTAMP},
+      </if>
+
     </set>
     <if test="_parameter != null">
       <include refid="Update_By_Example_Where_Clause" />
     </if>
   </update>
-  
-  
+
+
   <update id="updateByExample" parameterType="map">
     update t_sys_notice_user
     set
             	     	 id = #{record.id,jdbcType=VARCHAR},
     	         	     	 notice_id = #{record.noticeId,jdbcType=VARCHAR},
     	         	     	 user_id = #{record.userId,jdbcType=VARCHAR},
-    	         	     	 state = #{record.state,jdbcType=INTEGER}
+    	         	     	 state = #{record.state,jdbcType=INTEGER},
+    	         	     	 read_time = #{record.readTime,jdbcType=TIMESTAMP}
     	         <if test="_parameter != null">
       <include refid="Update_By_Example_Where_Clause" />
     </if>
@@ -213,6 +228,9 @@
                       <if test="state != null">
         state = #{state,jdbcType=INTEGER},
       </if>
+                      <if test="readTime != null">
+        read_time = #{readTime,jdbcType=TIMESTAMP},
+      </if>
               </set>
     where 
             id = #{id,jdbcType=VARCHAR}
@@ -226,7 +244,8 @@
     set 
              	        	    	 			notice_id = #{noticeId,jdbcType=VARCHAR},
 		     	        	    	 			user_id = #{userId,jdbcType=VARCHAR},
-		     	        	    	 			state = #{state,jdbcType=INTEGER}
+		     	        	    	 			state = #{state,jdbcType=INTEGER},
+		     	        	    	 			read_time = #{readTime,jdbcType=TIMESTAMP}
 		     	        where 
             id = #{id,jdbcType=VARCHAR}
                                     

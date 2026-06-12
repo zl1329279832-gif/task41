@@ -9,6 +9,9 @@
     <result column="create_id" jdbcType="VARCHAR" property="createId" />
     <result column="create_username" jdbcType="VARCHAR" property="createUsername" />
     <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="status" jdbcType="INTEGER" property="status" />
+    <result column="scope" jdbcType="INTEGER" property="scope" />
+    <result column="target_ids" jdbcType="VARCHAR" property="targetIds" />
   </resultMap>
   <sql id="Example_Where_Clause">
     <where>
@@ -75,7 +78,10 @@
        	  	      	type,
        	  	      	create_id,
        	  	      	create_username,
-       	  	    	  	create_time
+       	  	    	  	create_time,
+       	  	      	status,
+       	  	      	scope,
+       	  	      	target_ids
        	</sql>
   <select id="selectByExample" parameterType="com.fc.v2.model.auto.SysNoticeExample" resultMap="BaseResultMap">
     select
@@ -117,7 +123,10 @@
        	  	       type,
        	  	       create_id,
        	  	       create_username,
-       	  	    	  create_time
+       	  	    	  create_time,
+       	  	       status,
+       	  	       scope,
+       	  	       target_ids
        	    )
     values (
 	  	  	      	#{id,jdbcType=VARCHAR},
@@ -126,7 +135,10 @@
        	  	      	#{type,jdbcType=INTEGER},
        	  	      	#{createId,jdbcType=VARCHAR},
        	  	      	#{createUsername,jdbcType=VARCHAR},
-       	  	    	  #{createTime,jdbcType=TIMESTAMP}
+       	  	    	  #{createTime,jdbcType=TIMESTAMP},
+       	  	      	#{status,jdbcType=INTEGER},
+       	  	      	#{scope,jdbcType=INTEGER},
+       	  	      	#{targetIds,jdbcType=VARCHAR}
        	    )
   </insert>
   
@@ -167,7 +179,19 @@
       <if test="createTime != null">
         create_time,
       </if>
-      
+
+      <if test="status != null">
+        status,
+      </if>
+
+      <if test="scope != null">
+        scope,
+      </if>
+
+      <if test="targetIds != null">
+        target_ids,
+      </if>
+
          </trim>
     <trim prefix="values (" suffix=")" suffixOverrides=",">
           <if test="id != null">
@@ -190,6 +214,15 @@
       </if>
           <if test="createTime != null">
         #{createTime,jdbcType=TIMESTAMP},
+      </if>
+          <if test="status != null">
+        #{status,jdbcType=INTEGER},
+      </if>
+          <if test="scope != null">
+        #{scope,jdbcType=INTEGER},
+      </if>
+          <if test="targetIds != null">
+        #{targetIds,jdbcType=VARCHAR},
       </if>
         </trim>
   </insert>
@@ -225,14 +258,23 @@
           <if test="record.createTime != null">
         create_time = #{record.createTime,jdbcType=TIMESTAMP},
       </if>
-         
+          <if test="record.status != null">
+        status = #{record.status,jdbcType=INTEGER},
+      </if>
+          <if test="record.scope != null">
+        scope = #{record.scope,jdbcType=INTEGER},
+      </if>
+          <if test="record.targetIds != null">
+        target_ids = #{record.targetIds,jdbcType=VARCHAR},
+      </if>
+
     </set>
     <if test="_parameter != null">
       <include refid="Update_By_Example_Where_Clause" />
     </if>
   </update>
-  
-  
+
+
   <update id="updateByExample" parameterType="map">
     update t_sys_notice
     set
@@ -242,7 +284,10 @@
     	         	     	 type = #{record.type,jdbcType=INTEGER},
     	         	     	 create_id = #{record.createId,jdbcType=VARCHAR},
     	         	     	 create_username = #{record.createUsername,jdbcType=VARCHAR},
-    	         	     	 create_time = #{record.createTime,jdbcType=TIMESTAMP}
+    	         	     	 create_time = #{record.createTime,jdbcType=TIMESTAMP},
+    	         	     	 status = #{record.status,jdbcType=INTEGER},
+    	         	     	 scope = #{record.scope,jdbcType=INTEGER},
+    	         	     	 target_ids = #{record.targetIds,jdbcType=VARCHAR}
     	         <if test="_parameter != null">
       <include refid="Update_By_Example_Where_Clause" />
     </if>
@@ -270,6 +315,15 @@
                       <if test="createTime != null">
         create_time = #{createTime,jdbcType=TIMESTAMP},
       </if>
+                      <if test="status != null">
+        status = #{status,jdbcType=INTEGER},
+      </if>
+                      <if test="scope != null">
+        scope = #{scope,jdbcType=INTEGER},
+      </if>
+                      <if test="targetIds != null">
+        target_ids = #{targetIds,jdbcType=VARCHAR},
+      </if>
               </set>
     where 
             id = #{id,jdbcType=VARCHAR}
@@ -286,7 +340,10 @@
 		     	        	    	 			type = #{type,jdbcType=INTEGER},
 		     	        	    	 			create_id = #{createId,jdbcType=VARCHAR},
 		     	        	    	 			create_username = #{createUsername,jdbcType=VARCHAR},
-		     	        	    	 			create_time = #{createTime,jdbcType=TIMESTAMP}
+		     	        	    	 			create_time = #{createTime,jdbcType=TIMESTAMP},
+		     	        	    	 			status = #{status,jdbcType=INTEGER},
+		     	        	    	 			scope = #{scope,jdbcType=INTEGER},
+		     	        	    	 			target_ids = #{targetIds,jdbcType=VARCHAR}
 		     	        where 
             id = #{id,jdbcType=VARCHAR}
                                                             

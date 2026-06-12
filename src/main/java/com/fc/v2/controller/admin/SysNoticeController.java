@@ -1,5 +1,7 @@
  package com.fc.v2.controller.admin;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -14,9 +16,13 @@ import com.fc.v2.common.base.BaseController;
 import com.fc.v2.common.domain.AjaxResult;
 import com.fc.v2.common.domain.ResultTable;
 import com.fc.v2.model.auto.SysNotice;
+import com.fc.v2.model.auto.SysNoticeUser;
+import com.fc.v2.model.auto.SysNoticeUserExample;
 import com.fc.v2.model.custom.Tablepar;
 import com.fc.v2.satoken.SaTokenUtil;
 import com.fc.v2.service.SysNoticeService;
+import com.fc.v2.service.SysNoticeUserService;
+import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
@@ -37,6 +43,8 @@ public class SysNoticeController extends BaseController{
 	private final String prefix = "admin/sysNotice";
 	@Autowired
 	private SysNoticeService sysNoticeService;
+	@Autowired
+	private SysNoticeUserService sysNoticeUserService;
 	
 	
 	/**
@@ -169,17 +177,21 @@ public class SysNoticeController extends BaseController{
 	}
 	
 	/**
-	 * 根据公告id查询跳转到公告详情页面
+	 * 根据公告id查询跳转到公告详情页面（撤回的公告不可查看）
 	 * @param id
 	 * @param mmap
 	 * @return
 	 */
-	//@Log(title = "字典数据表删除", action = "1")
 	@ApiOperation(value = "根据公告id查询跳转到公告详情页面", notes = " 根据公告id查询跳转到公告详情页面")
 	@GetMapping("/viewinfo/{id}")
     public String viewinfo(@PathVariable("id") String id,ModelMap mmap)
     {
 		SysNotice notice= sysNoticeService.selectByPrimaryKey(id);
+		if (notice != null && notice.getStatus() != null && notice.getStatus() == 2) {
+			mmap.addAttribute("notice", null);
+			mmap.addAttribute("recalled", true);
+			return prefix + "/view";
+		}
 		mmap.addAttribute("notice", notice);
 		//把推送给该用户的公告设置为已读
 		sysNoticeService.editUserState(id);
@@ -215,8 +227,56 @@ public class SysNoticeController extends BaseController{
         return toAjax(sysNoticeService.updateByPrimaryKeySelective(record));
     }
 
-    
-    
+	/**
+	 * 撤回公告
+	 * @param id
+	 * @return
+	 */
+	@ApiOperation(value = "撤回公告", notes = "撤回公告")
+	@PostMapping("/recall/{id}")
+	@SaCheckPermission("gen:sysNotice:edit")
+	@ResponseBody
+	public AjaxResult recall(@PathVariable("id") String id) {
+		int result = sysNoticeService.recallNotice(id);
+		if (result > 0) {
+			return success("撤回成功");
+		} else {
+			return error("撤回失败，公告不存在或状态不允许撤回");
+		}
+	}
 
-	
+	/**
+	 * 获取当前用户未读公告数量
+	 * @return
+	 */
+	@ApiOperation(value = "获取当前用户未读公告数量", notes = "获取当前用户未读公告数量")
+	@GetMapping("/unreadCount")
+	@ResponseBody
+	public AjaxResult unreadCount() {
+		String userId = SaTokenUtil.getUserId();
+		int count = sysNoticeService.getUnreadCount(userId);
+		return retobject(200, count);
+	}
+
+	/**
+	 * 查看公告阅读回执明细
+	 * @param id
+	 * @param tablepar
+	 * @return
+	 */
+	@ApiOperation(value = "查看公告阅读回执", notes = "查看公告阅读回执明细")
+	@GetMapping("/readReceipt/{id}")
+	@SaCheckPermission("gen:sysNotice:list")
+	@ResponseBody
+	public ResultTable readReceipt(@PathVariable("id") String id, Tablepar tablepar) {
+		SysNoticeUserExample example = new SysNoticeUserExample();
+		example.createCriteria().andNoticeIdEqualTo(id);
+		example.setOrderByClause("state ASC, read_time DESC");
+		PageHelper.startPage(tablepar.getPage(), tablepar.getLimit());
+		List<SysNoticeUser> list = sysNoticeUserService.selectByExample(example);
+		PageInfo<SysNoticeUser> pageInfo = new PageInfo<>(list);
+		return pageTable(pageInfo.getList(), pageInfo.getTotal());
+	}
+
+
 }
