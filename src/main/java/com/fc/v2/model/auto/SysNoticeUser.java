@@ -1,10 +1,13 @@
 package com.fc.v2.model.auto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.io.Serializable;
 import java.lang.Integer;
+import java.util.Date;
 
 /**
- * 公告_用户外键 SysNoticeUser 
+ * 公告_用户外键 SysNoticeUser
  * @author fuce_自动生成
  * @email 115889198@qq.com
  * @date 2019-09-08 02:12:54
@@ -12,21 +15,25 @@ import java.lang.Integer;
 public class SysNoticeUser implements Serializable {
 
 	private static final long serialVersionUID = 1L;
-	
-		
+
+
 	/** 主键 **/
 	private String id;
-		
+
 	/** 公告id **/
 	private String noticeId;
-		
+
 	/** 用户id **/
 	private String userId;
-		
+
 	/** 0未阅读 1 阅读 **/
 	private Integer state;
-		
-		
+
+	/** 已读时间 **/
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss",timezone="GMT+8")
+	private Date readTime;
+
+
 	public String getId() {
         return id;
     }
@@ -34,8 +41,8 @@ public class SysNoticeUser implements Serializable {
     public void setId(String id) {
         this.id = id;
     }
-	 
-			
+
+
 	public String getNoticeId() {
         return noticeId;
     }
@@ -43,8 +50,8 @@ public class SysNoticeUser implements Serializable {
     public void setNoticeId(String noticeId) {
         this.noticeId = noticeId;
     }
-	 
-			
+
+
 	public String getUserId() {
         return userId;
     }
@@ -52,8 +59,8 @@ public class SysNoticeUser implements Serializable {
     public void setUserId(String userId) {
         this.userId = userId;
     }
-	 
-			
+
+
 	public Integer getState() {
         return state;
     }
@@ -61,20 +68,29 @@ public class SysNoticeUser implements Serializable {
     public void setState(Integer state) {
         this.state = state;
     }
-	 
-			
+
+	public Date getReadTime() {
+        return readTime;
+    }
+
+    public void setReadTime(Date readTime) {
+        this.readTime = readTime;
+    }
+
+
 	public SysNoticeUser() {
         super();
     }
-    
-																						
-	public SysNoticeUser(String id,String noticeId,String userId,Integer state) {
-	
+
+
+	public SysNoticeUser(String id,String noticeId,String userId,Integer state,Date readTime) {
+
 		this.id = id;
 		this.noticeId = noticeId;
 		this.userId = userId;
 		this.state = state;
-		
+		this.readTime = readTime;
+
 	}
-	
+
 }

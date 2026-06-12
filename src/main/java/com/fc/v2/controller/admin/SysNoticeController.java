@@ -33,18 +33,16 @@ import io.swagger.annotations.ApiOperation;
 @Controller
 @RequestMapping("/SysNoticeController")
 public class SysNoticeController extends BaseController{
-	
+
 	private final String prefix = "admin/sysNotice";
 	@Autowired
 	private SysNoticeService sysNoticeService;
-	
-	
+
+
 	/**
 	 * 展示页面跳转
 	 * @param model
 	 * @return
-	 * @author fuce
-	 * @Date 2019年11月11日 下午4:09:24
 	 */
 	@ApiOperation(value = "分页跳转", notes = "分页跳转")
 	@GetMapping("/view")
@@ -58,26 +56,21 @@ public class SysNoticeController extends BaseController{
 	 * @param tablepar
 	 * @param searchText
 	 * @return
-	 * @author fuce
-	 * @Date 2019年11月11日 下午4:09:35
 	 */
-	//@Log(title = "公告集合查询", action = "111")
 	@ApiOperation(value = "分页查询", notes = "分页查询")
 	@GetMapping("/list")
 	@SaCheckPermission("gen:sysNotice:list")
 	@ResponseBody
 	public ResultTable list(Tablepar tablepar, String searchText){
-		PageInfo<SysNotice> page=sysNoticeService.list(tablepar,searchText) ; 
+		PageInfo<SysNotice> page=sysNoticeService.list(tablepar,searchText) ;
 		return pageTable(page.getList(),page.getTotal());
 	}
-	
-	
+
+
 	/**
 	 * 对应的用户的展示页面
 	 * @param model
 	 * @return
-	 * @author fuce
-	 * @Date 2019年11月11日 下午4:09:42
 	 */
 	@ApiOperation(value = "对应的用户的展示页面", notes = "对应的用户的展示页面")
 	@GetMapping("/viewUser")
@@ -99,7 +92,7 @@ public class SysNoticeController extends BaseController{
 		PageInfo<SysNotice> page=sysNoticeService.list(SaTokenUtil.getUser(), tablepar, searchText);
 		return pageTable(page.getList(),page.getTotal());
     }
-	
+
 	/**
 	 * 新增跳转
 	 * @param modelMap
@@ -112,13 +105,10 @@ public class SysNoticeController extends BaseController{
         return prefix + "/add";
     }
 	/**
-	 * 新增保存
+	 * 新增保存（支持定向发布：scopeType + scopeIds）
 	 * @param sysNotice
 	 * @return
-	 * @author fuce
-	 * @Date 2019年11月11日 下午4:07:09
 	 */
-	//@Log(title = "公告新增", action = "111")
     @ApiOperation(value = "新增", notes = "新增")
 	@PostMapping("/add")
 	@SaCheckPermission("gen:sysNotice:add")
@@ -131,13 +121,12 @@ public class SysNoticeController extends BaseController{
 			return error();
 		}
 	}
-	
+
 	/**
 	 * 删除
 	 * @param ids
 	 * @return
 	 **/
-	//@Log(title = "公告删除", action = "111")
 	@ApiOperation(value = "删除", notes = "删除")
 	@DeleteMapping("/remove")
 	@SaCheckPermission("gen:sysNotice:remove")
@@ -150,10 +139,10 @@ public class SysNoticeController extends BaseController{
 			return error();
 		}
 	}
-	
+
 	/**
 	 * 检查
-	 * @param tsysUser
+	 * @param sysNotice
 	 * @return
 	 */
 	@ApiOperation(value = "检查Name唯一", notes = "检查Name唯一")
@@ -167,26 +156,32 @@ public class SysNoticeController extends BaseController{
 			return 0;
 		}
 	}
-	
+
 	/**
 	 * 根据公告id查询跳转到公告详情页面
 	 * @param id
 	 * @param mmap
 	 * @return
 	 */
-	//@Log(title = "字典数据表删除", action = "1")
 	@ApiOperation(value = "根据公告id查询跳转到公告详情页面", notes = " 根据公告id查询跳转到公告详情页面")
 	@GetMapping("/viewinfo/{id}")
     public String viewinfo(@PathVariable("id") String id,ModelMap mmap)
     {
 		SysNotice notice= sysNoticeService.selectByPrimaryKey(id);
+		if(notice == null) {
+			return prefix + "/view";
+		}
+		// 已撤回的公告不允许查看
+		if(notice.getStatus() != null && notice.getStatus() == 1) {
+			return prefix + "/view";
+		}
 		mmap.addAttribute("notice", notice);
 		//把推送给该用户的公告设置为已读
 		sysNoticeService.editUserState(id);
         return prefix + "/view";
     }
-	
-	
+
+
 	/**
 	 * 修改跳转
 	 * @param id
@@ -201,11 +196,10 @@ public class SysNoticeController extends BaseController{
 
         return prefix + "/edit";
     }
-	
+
 	/**
      * 修改保存
      */
-    //@Log(title = "公告修改", action = "111")
 	@ApiOperation(value = "修改保存", notes = "修改保存")
     @SaCheckPermission("gen:sysNotice:edit")
     @PostMapping("/edit")
@@ -215,8 +209,32 @@ public class SysNoticeController extends BaseController{
         return toAjax(sysNoticeService.updateByPrimaryKeySelective(record));
     }
 
-    
-    
 
-	
+	/**
+	 * 撤回公告
+	 * @param id 公告ID
+	 * @return
+	 */
+	@ApiOperation(value = "撤回公告", notes = "撤回公告")
+	@PostMapping("/withdraw/{id}")
+	@SaCheckPermission("gen:sysNotice:edit")
+	@ResponseBody
+	public AjaxResult withdraw(@PathVariable("id") String id) {
+		return toAjax(sysNoticeService.withdraw(id));
+	}
+
+	/**
+	 * 查看公告已读/未读统计
+	 * @param id 公告ID
+	 * @return
+	 */
+	@ApiOperation(value = "已读统计", notes = "查看公告已读/未读统计")
+	@GetMapping("/readStats/{id}")
+	@SaCheckPermission("gen:sysNotice:list")
+	@ResponseBody
+	public AjaxResult readStats(@PathVariable("id") String id) {
+		return retobject(200, sysNoticeService.getReadStats(id));
+	}
+
+
 }

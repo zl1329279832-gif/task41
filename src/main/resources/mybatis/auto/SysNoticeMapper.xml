@@ -9,6 +9,9 @@
     <result column="create_id" jdbcType="VARCHAR" property="createId" />
     <result column="create_username" jdbcType="VARCHAR" property="createUsername" />
     <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="status" jdbcType="INTEGER" property="status" />
+    <result column="scope_type" jdbcType="INTEGER" property="scopeType" />
+    <result column="scope_ids" jdbcType="LONGVARCHAR" property="scopeIds" />
   </resultMap>
   <sql id="Example_Where_Clause">
     <where>
@@ -70,13 +73,16 @@
   </sql>
 <sql id="Base_Column_List">
 	  	  	      	id,
-       	  	      	title,
-       	  	      	content,
-       	  	      	type,
-       	  	      	create_id,
-       	  	      	create_username,
-       	  	    	  	create_time
-       	</sql>
+      	  	      	title,
+      	  	      	content,
+      	  	      	type,
+      	  	      	create_id,
+      	  	      	create_username,
+      	    	  	create_time,
+      	    	  	status,
+      	    	  	scope_type,
+      	    	  	scope_ids
+      	</sql>
   <select id="selectByExample" parameterType="com.fc.v2.model.auto.SysNoticeExample" resultMap="BaseResultMap">
     select
     <if test="distinct">
@@ -92,7 +98,7 @@
     </if>
   </select>
   <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
-    select 
+    select
     <include refid="Base_Column_List" />
     from t_sys_notice
     where id = #{id,jdbcType=VARCHAR}
@@ -108,66 +114,78 @@
       <include refid="Example_Where_Clause" />
     </if>
   </delete>
-  
+
   <insert id="insert" parameterType="com.fc.v2.model.auto.SysNotice">
     insert into t_sys_notice (
       	  	       id,
-       	  	       title,
-       	  	       content,
-       	  	       type,
-       	  	       create_id,
-       	  	       create_username,
-       	  	    	  create_time
-       	    )
+      	  	       title,
+      	  	       content,
+      	  	       type,
+      	  	       create_id,
+      	  	       create_username,
+      	    	      create_time,
+      	    	      status,
+      	    	      scope_type,
+      	    	      scope_ids
+      	    )
     values (
-	  	  	      	#{id,jdbcType=VARCHAR},
-       	  	      	#{title,jdbcType=VARCHAR},
-       	  	      	#{content,jdbcType=VARCHAR},
-       	  	      	#{type,jdbcType=INTEGER},
-       	  	      	#{createId,jdbcType=VARCHAR},
-       	  	      	#{createUsername,jdbcType=VARCHAR},
-       	  	    	  #{createTime,jdbcType=TIMESTAMP}
-       	    )
+		  	  	      	#{id,jdbcType=VARCHAR},
+      	  	      	#{title,jdbcType=VARCHAR},
+      	  	      	#{content,jdbcType=VARCHAR},
+      	  	      	#{type,jdbcType=INTEGER},
+      	  	      	#{createId,jdbcType=VARCHAR},
+      	  	      	#{createUsername,jdbcType=VARCHAR},
+      	    	      #{createTime,jdbcType=TIMESTAMP},
+      	    	      #{status,jdbcType=INTEGER},
+      	    	      #{scopeType,jdbcType=INTEGER},
+      	    	      #{scopeIds,jdbcType=LONGVARCHAR}
+      	    )
   </insert>
-  
+
   <insert id="insertSelective" parameterType="com.fc.v2.model.auto.SysNotice">
     insert into t_sys_notice
     <trim prefix="(" suffix=")" suffixOverrides=",">
-          
+
       <if test="id != null">
         id,
       </if>
-      
-         
+
       <if test="title != null">
         title,
       </if>
-      
-         
+
       <if test="content != null">
         content,
       </if>
-      
-         
+
       <if test="type != null">
         type,
       </if>
-      
-         
+
       <if test="createId != null">
         create_id,
       </if>
-      
-         
+
       <if test="createUsername != null">
         create_username,
       </if>
-      
-         
+
       <if test="createTime != null">
         create_time,
       </if>
-      
+
+      <if test="status != null">
+        status,
+      </if>
+
+      <if test="scopeType != null">
+        scope_type,
+      </if>
+
+      <if test="scopeIds != null">
+        scope_ids,
+      </if>
+
          </trim>
     <trim prefix="values (" suffix=")" suffixOverrides=",">
           <if test="id != null">
@@ -191,16 +209,25 @@
           <if test="createTime != null">
         #{createTime,jdbcType=TIMESTAMP},
       </if>
+          <if test="status != null">
+        #{status,jdbcType=INTEGER},
+      </if>
+          <if test="scopeType != null">
+        #{scopeType,jdbcType=INTEGER},
+      </if>
+          <if test="scopeIds != null">
+        #{scopeIds,jdbcType=LONGVARCHAR},
+      </if>
         </trim>
   </insert>
-  
+
   <select id="countByExample" parameterType="com.fc.v2.model.auto.SysNoticeExample" resultType="java.lang.Long">
     select count(*) from t_sys_notice
     <if test="_parameter != null">
       <include refid="Example_Where_Clause" />
     </if>
   </select>
-  
+
   <update id="updateByExampleSelective" parameterType="map">
     update t_sys_notice
     <set>
@@ -225,30 +252,42 @@
           <if test="record.createTime != null">
         create_time = #{record.createTime,jdbcType=TIMESTAMP},
       </if>
-         
+          <if test="record.status != null">
+        status = #{record.status,jdbcType=INTEGER},
+      </if>
+          <if test="record.scopeType != null">
+        scope_type = #{record.scopeType,jdbcType=INTEGER},
+      </if>
+          <if test="record.scopeIds != null">
+        scope_ids = #{record.scopeIds,jdbcType=LONGVARCHAR},
+      </if>
+
     </set>
     <if test="_parameter != null">
       <include refid="Update_By_Example_Where_Clause" />
     </if>
   </update>
-  
-  
+
+
   <update id="updateByExample" parameterType="map">
     update t_sys_notice
     set
             	     	 id = #{record.id,jdbcType=VARCHAR},
-    	         	     	 title = #{record.title,jdbcType=VARCHAR},
-    	         	     	 content = #{record.content,jdbcType=VARCHAR},
-    	         	     	 type = #{record.type,jdbcType=INTEGER},
-    	         	     	 create_id = #{record.createId,jdbcType=VARCHAR},
-    	         	     	 create_username = #{record.createUsername,jdbcType=VARCHAR},
-    	         	     	 create_time = #{record.createTime,jdbcType=TIMESTAMP}
-    	         <if test="_parameter != null">
+	    	         	     	 title = #{record.title,jdbcType=VARCHAR},
+	    	         	     	 content = #{record.content,jdbcType=VARCHAR},
+	    	         	     	 type = #{record.type,jdbcType=INTEGER},
+	    	         	     	 create_id = #{record.createId,jdbcType=VARCHAR},
+	    	         	     	 create_username = #{record.createUsername,jdbcType=VARCHAR},
+	    	         	     	 create_time = #{record.createTime,jdbcType=TIMESTAMP},
+	    	         	     	 status = #{record.status,jdbcType=INTEGER},
+	    	         	     	 scope_type = #{record.scopeType,jdbcType=INTEGER},
+	    	         	     	 scope_ids = #{record.scopeIds,jdbcType=LONGVARCHAR}
+	    	         <if test="_parameter != null">
       <include refid="Update_By_Example_Where_Clause" />
     </if>
   </update>
-  
-  
+
+
       <update id="updateByPrimaryKeySelective" parameterType="com.fc.v2.model.auto.SysNotice">
     update t_sys_notice
     <set>
@@ -270,27 +309,39 @@
                       <if test="createTime != null">
         create_time = #{createTime,jdbcType=TIMESTAMP},
       </if>
+                      <if test="status != null">
+        status = #{status,jdbcType=INTEGER},
+      </if>
+                      <if test="scopeType != null">
+        scope_type = #{scopeType,jdbcType=INTEGER},
+      </if>
+                      <if test="scopeIds != null">
+        scope_ids = #{scopeIds,jdbcType=LONGVARCHAR},
+      </if>
               </set>
-    where 
+    where
             id = #{id,jdbcType=VARCHAR}
-                                                          
+
   </update>
 
-      	      	   	      	   	      	   	      	   	      	   	      	   	      	
+
 
   <update id="updateByPrimaryKey" parameterType="com.fc.v2.model.auto.SysNotice">
     update t_sys_notice
-    set 
+    set
              	        	    	 			title = #{title,jdbcType=VARCHAR},
-		     	        	    	 			content = #{content,jdbcType=VARCHAR},
-		     	        	    	 			type = #{type,jdbcType=INTEGER},
-		     	        	    	 			create_id = #{createId,jdbcType=VARCHAR},
-		     	        	    	 			create_username = #{createUsername,jdbcType=VARCHAR},
-		     	        	    	 			create_time = #{createTime,jdbcType=TIMESTAMP}
-		     	        where 
+			     	        	    	 			content = #{content,jdbcType=VARCHAR},
+			     	        	    	 			type = #{type,jdbcType=INTEGER},
+			     	        	    	 			create_id = #{createId,jdbcType=VARCHAR},
+			     	        	    	 			create_username = #{createUsername,jdbcType=VARCHAR},
+			     	        	    	 			create_time = #{createTime,jdbcType=TIMESTAMP},
+			     	        	    	 			status = #{status,jdbcType=INTEGER},
+			     	        	    	 			scope_type = #{scopeType,jdbcType=INTEGER},
+			     	        	    	 			scope_ids = #{scopeIds,jdbcType=LONGVARCHAR}
+			     	        where
             id = #{id,jdbcType=VARCHAR}
-                                                            
+
   </update>
-  
-                                       
+
+
 </mapper>

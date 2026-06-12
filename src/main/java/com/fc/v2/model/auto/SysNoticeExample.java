@@ -607,7 +607,73 @@ public class SysNoticeExample {
             addCriterion("create_time not between", value1, value2, "createTime");
             return (Criteria) this;
         }
-        
+
+
+        public Criteria andStatusIsNull() {
+            addCriterion("status is null");
+            return (Criteria) this;
+        }
+
+        public Criteria andStatusIsNotNull() {
+            addCriterion("status is not null");
+            return (Criteria) this;
+        }
+
+        public Criteria andStatusEqualTo(Integer value) {
+            addCriterion("status =", value, "status");
+            return (Criteria) this;
+        }
+
+        public Criteria andStatusNotEqualTo(Integer value) {
+            addCriterion("status <>", value, "status");
+            return (Criteria) this;
+        }
+
+        public Criteria andStatusIn(List<Integer> values) {
+            addCriterion("status in", values, "status");
+            return (Criteria) this;
+        }
+
+        public Criteria andScopeTypeIsNull() {
+            addCriterion("scope_type is null");
+            return (Criteria) this;
+        }
+
+        public Criteria andScopeTypeIsNotNull() {
+            addCriterion("scope_type is not null");
+            return (Criteria) this;
+        }
+
+        public Criteria andScopeTypeEqualTo(Integer value) {
+            addCriterion("scope_type =", value, "scopeType");
+            return (Criteria) this;
+        }
+
+        public Criteria andScopeTypeNotEqualTo(Integer value) {
+            addCriterion("scope_type <>", value, "scopeType");
+            return (Criteria) this;
+        }
+
+        public Criteria andScopeTypeIn(List<Integer> values) {
+            addCriterion("scope_type in", values, "scopeType");
+            return (Criteria) this;
+        }
+
+        public Criteria andScopeIdsIsNull() {
+            addCriterion("scope_ids is null");
+            return (Criteria) this;
+        }
+
+        public Criteria andScopeIdsIsNotNull() {
+            addCriterion("scope_ids is not null");
+            return (Criteria) this;
+        }
+
+        public Criteria andScopeIdsEqualTo(String value) {
+            addCriterion("scope_ids =", value, "scopeIds");
+            return (Criteria) this;
+        }
+
 	}
 
     public static class Criteria extends GeneratedCriteria {

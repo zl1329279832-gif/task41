@@ -1,6 +1,7 @@
 package com.fc.v2.model.auto;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -393,7 +394,28 @@ public class SysNoticeUserExample {
             addCriterion("state not between", value1, value2, "state");
             return (Criteria) this;
         }
-        
+
+
+        public Criteria andReadTimeIsNull() {
+            addCriterion("read_time is null");
+            return (Criteria) this;
+        }
+
+        public Criteria andReadTimeIsNotNull() {
+            addCriterion("read_time is not null");
+            return (Criteria) this;
+        }
+
+        public Criteria andReadTimeEqualTo(Date value) {
+            addCriterion("read_time =", value, "readTime");
+            return (Criteria) this;
+        }
+
+        public Criteria andReadTimeNotEqualTo(Date value) {
+            addCriterion("read_time <>", value, "readTime");
+            return (Criteria) this;
+        }
+
 	}
 
     public static class Criteria extends GeneratedCriteria {

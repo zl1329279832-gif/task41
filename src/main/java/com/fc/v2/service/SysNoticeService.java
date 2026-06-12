@@ -1,6 +1,7 @@
 package com.fc.v2.service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -12,6 +13,7 @@ import com.fc.v2.common.base.BaseService;
 import com.fc.v2.common.support.ConvertUtil;
 import com.fc.v2.mapper.auto.SysNoticeMapper;
 import com.fc.v2.mapper.auto.SysNoticeUserMapper;
+import com.fc.v2.mapper.custom.NoticeDao;
 import com.fc.v2.model.auto.SysNotice;
 import com.fc.v2.model.auto.SysNoticeExample;
 import com.fc.v2.model.auto.SysNoticeUser;
@@ -19,6 +21,7 @@ import com.fc.v2.model.auto.SysNoticeUserExample;
 import com.fc.v2.model.auto.SysNoticeUserExample.Criteria;
 import com.fc.v2.model.auto.TsysUser;
 import com.fc.v2.model.auto.TsysUserExample;
+import com.fc.v2.model.custom.NoticeReadStatVO;
 import com.fc.v2.model.custom.Tablepar;
 import com.fc.v2.satoken.SaTokenUtil;
 import com.fc.v2.util.SnowflakeIdWorker;
@@ -43,92 +46,97 @@ public class SysNoticeService implements BaseService<SysNotice, SysNoticeExample
 	private SysNoticeUserService sysNoticeUserService;
 	@Autowired
 	private SysNoticeUserMapper sysNoticeUserMapper;
-	/**
-	 * 分页查询
-	 * @param pageNum
-	 * @param pageSize
-	 * @return
-	 */
-	 public PageInfo<SysNotice> list(Tablepar tablepar,String name){
-	        SysNoticeExample testExample=new SysNoticeExample();
-	        testExample.setOrderByClause("id ASC");
-	        if(name!=null&&!"".equals(name)){
-	        	testExample.createCriteria().andTitleLike("%"+name+"%");
-	        }
+	@Autowired
+	private NoticeDao noticeDao;
 
-	        PageHelper.startPage(tablepar.getPage(), tablepar.getLimit());
-	        List<SysNotice> list= sysNoticeMapper.selectByExample(testExample);
-	        PageInfo<SysNotice> pageInfo = new PageInfo<SysNotice>(list);
-	        return  pageInfo;
+	/**
+	 * 管理员分页查询公告列表（显示所有状态）
+	 */
+	public PageInfo<SysNotice> list(Tablepar tablepar,String name){
+        SysNoticeExample testExample=new SysNoticeExample();
+        testExample.setOrderByClause("id ASC");
+        if(name!=null&&!"".equals(name)){
+        	testExample.createCriteria().andTitleLike("%"+name+"%");
+        }
+
+        PageHelper.startPage(tablepar.getPage(), tablepar.getLimit());
+        List<SysNotice> list= sysNoticeMapper.selectByExample(testExample);
+        PageInfo<SysNotice> pageInfo = new PageInfo<SysNotice>(list);
+        return  pageInfo;
 	 }
-	 
-	 
-	 
- 	/**
-	 * 对应用户的所有公告信息
-	 * @param pageNum
-	 * @param pageSize
-	 * @return
+
+
+
+	/**
+	 * 对应用户的所有公告信息（排除已撤回）
 	 */
 	 public PageInfo<SysNotice> list(TsysUser tsysUser,Tablepar tablepar,String name){
-	        //查询未阅读的公告用户外键
-			SysNoticeUserExample sysNoticeUserExample=new SysNoticeUserExample();
-			Criteria criteria= sysNoticeUserExample.createCriteria();
-			criteria.andUserIdEqualTo(tsysUser.getId());
-			List<SysNoticeUser> noticeUsers= sysNoticeUserMapper.selectByExample(sysNoticeUserExample);
-			if(noticeUsers!=null&&noticeUsers.size()>0) {
-				//查询对应的公告列表
-				List<String> ids=new ArrayList<String>();
-				for (SysNoticeUser sysNoticeUser : noticeUsers) {
-					ids.add(sysNoticeUser.getNoticeId());
-				}
-				
-				//分页查询对应用户的所有公告信息
-				SysNoticeExample testExample=new SysNoticeExample();
-		        testExample.setOrderByClause("id desc");
-		        com.fc.v2.model.auto.SysNoticeExample.Criteria criteria1= testExample.createCriteria();
-		        if(name!=null&&!"".equals(name)){
-		        	criteria1.andTitleLike("%"+name+"%");
-		        }
-			     
-		        criteria1.andIdIn(ids);
-		        PageHelper.startPage(tablepar.getPage(), tablepar.getLimit());
-		        List<SysNotice> list= sysNoticeMapper.selectByExample(testExample);
-		       
-		        PageInfo<SysNotice> pageInfo = new PageInfo<SysNotice>(list);
-				
-				 return  pageInfo;
-			}
-			
-			return new PageInfo<SysNotice>();
-	      
-	      
+		 //查询未阅读的公告用户外键
+		 SysNoticeUserExample sysNoticeUserExample=new SysNoticeUserExample();
+		 Criteria criteria= sysNoticeUserExample.createCriteria();
+		 criteria.andUserIdEqualTo(tsysUser.getId());
+		 List<SysNoticeUser> noticeUsers= sysNoticeUserMapper.selectByExample(sysNoticeUserExample);
+		 if(noticeUsers!=null&&noticeUsers.size()>0) {
+			 //查询对应的公告列表
+			 List<String> ids=new ArrayList<String>();
+			 for (SysNoticeUser sysNoticeUser : noticeUsers) {
+				 ids.add(sysNoticeUser.getNoticeId());
+			 }
+
+			 //分页查询对应用户的所有公告信息
+			 SysNoticeExample testExample=new SysNoticeExample();
+			 testExample.setOrderByClause("id desc");
+			 com.fc.v2.model.auto.SysNoticeExample.Criteria criteria1= testExample.createCriteria();
+			 if(name!=null&&!"".equals(name)){
+				 criteria1.andTitleLike("%"+name+"%");
+			 }
+			 // 排除已撤回的公告
+			 criteria1.andStatusNotEqualTo(1);
+			 criteria1.andIdIn(ids);
+			 PageHelper.startPage(tablepar.getPage(), tablepar.getLimit());
+			 List<SysNotice> list= sysNoticeMapper.selectByExample(testExample);
+
+			 PageInfo<SysNotice> pageInfo = new PageInfo<SysNotice>(list);
+
+			 return  pageInfo;
+		 }
+
+		 return new PageInfo<SysNotice>();
+
+
 	 }
-	 
-	 
+
+
 	@Override
+	@Transactional
 	public int deleteByPrimaryKey(String ids) {
 		List<String> lista=ConvertUtil.toListStrArray(ids);
+		// 先删除关联的 notice_user 记录
+		SysNoticeUserExample userExample = new SysNoticeUserExample();
+		userExample.createCriteria().andNoticeIdIn(lista);
+		sysNoticeUserMapper.deleteByExample(userExample);
+		// 再删除公告记录
 		SysNoticeExample example=new SysNoticeExample();
 		example.createCriteria().andIdIn(lista);
 		return sysNoticeMapper.deleteByExample(example);
 	}
-	
-	
+
+
 	@Override
 	public SysNotice selectByPrimaryKey(String id) {
-		
+
 		return sysNoticeMapper.selectByPrimaryKey(id);
 	}
 
-	
+
 	@Override
 	public int updateByPrimaryKeySelective(SysNotice record) {
 		return sysNoticeMapper.updateByPrimaryKeySelective(record);
 	}
-	
+
 	/**
-	 * 添加
+	 * 添加公告（支持定向发布）
+	 * scopeType: 0-全部用户, 1-指定角色, 2-指定部门, 3-指定用户
 	 */
 	@Override
 	@Transactional
@@ -141,50 +149,103 @@ public class SysNoticeService implements BaseService<SysNotice, SysNoticeExample
 		record.setCreateUsername(SaTokenUtil.getLoginName());
 		//添加创建时间
 		record.setCreateTime(new Date());
+		//设置状态为正常
+		record.setStatus(0);
+		//默认scopeType为0（全部用户）
+		if(record.getScopeType() == null) {
+			record.setScopeType(0);
+		}
+
 		sysNoticeMapper.insertSelective(record);
-		//给所有人添加公告状态
-		List<TsysUser> list= sysUserService.selectByExample(new TsysUserExample());
-		for (TsysUser tsysUser : list) {
-			SysNoticeUser noticeUser=new SysNoticeUser(null, record.getId(), tsysUser.getId(), 0); 
-			sysNoticeUserService.insertSelective(noticeUser);
+
+		// 根据 scopeType 解析目标用户列表
+		List<String> targetUserIds = resolveTargetUserIds(record.getScopeType(), record.getScopeIds());
+
+		// 批量创建 notice_user 记录（接收人快照）
+		if(targetUserIds != null && !targetUserIds.isEmpty()) {
+			List<SysNoticeUser> noticeUserList = new ArrayList<>();
+			for (String userId : targetUserIds) {
+				SysNoticeUser noticeUser = new SysNoticeUser();
+				noticeUser.setId(SnowflakeIdWorker.getUUID());
+				noticeUser.setNoticeId(record.getId());
+				noticeUser.setUserId(userId);
+				noticeUser.setState(0);
+				noticeUserList.add(noticeUser);
+			}
+			// 分批插入，每批500条
+			int batchSize = 500;
+			for(int i = 0; i < noticeUserList.size(); i += batchSize) {
+				int end = Math.min(i + batchSize, noticeUserList.size());
+				noticeDao.batchInsertNoticeUser(noticeUserList.subList(i, end));
+			}
 		}
 		return 1;
 	}
-	
-	
+
+	/**
+	 * 根据scopeType和scopeIds解析目标用户ID列表
+	 */
+	private List<String> resolveTargetUserIds(Integer scopeType, String scopeIds) {
+		if(scopeType == null || scopeType == 0) {
+			// 全部用户
+			List<TsysUser> allUsers = sysUserService.selectByExample(new TsysUserExample());
+			List<String> userIds = new ArrayList<>();
+			for(TsysUser u : allUsers) {
+				userIds.add(u.getId());
+			}
+			return userIds;
+		} else if(scopeType == 1) {
+			// 指定角色
+			List<String> roleIds = Arrays.asList(scopeIds.split(","));
+			return noticeDao.selectUserIdsByRoleIds(roleIds);
+		} else if(scopeType == 2) {
+			// 指定部门
+			List<Integer> deptIds = new ArrayList<>();
+			for(String s : scopeIds.split(",")) {
+				deptIds.add(Integer.parseInt(s.trim()));
+			}
+			return noticeDao.selectUserIdsByDeptIds(deptIds);
+		} else if(scopeType == 3) {
+			// 指定用户
+			return Arrays.asList(scopeIds.split(","));
+		}
+		return new ArrayList<>();
+	}
+
+
 	@Override
 	public int updateByExampleSelective(SysNotice record, SysNoticeExample example) {
-		
+
 		return sysNoticeMapper.updateByExampleSelective(record, example);
 	}
 
-	
+
 	@Override
 	public int updateByExample(SysNotice record, SysNoticeExample example) {
-		
+
 		return sysNoticeMapper.updateByExample(record, example);
 	}
 
 	@Override
 	public List<SysNotice> selectByExample(SysNoticeExample example) {
-		
+
 		return sysNoticeMapper.selectByExample(example);
 	}
 
-	
+
 	@Override
 	public long countByExample(SysNoticeExample example) {
-		
+
 		return sysNoticeMapper.countByExample(example);
 	}
 
-	
+
 	@Override
 	public int deleteByExample(SysNoticeExample example) {
-		
+
 		return sysNoticeMapper.deleteByExample(example);
 	}
-	
+
 	/**
 	 * 检查name
 	 * @param sysNotice
@@ -196,14 +257,12 @@ public class SysNoticeService implements BaseService<SysNotice, SysNoticeExample
 		List<SysNotice> list=sysNoticeMapper.selectByExample(example);
 		return list.size();
 	}
-	
+
 	/**
-	 * 获取用户未阅读公告
+	 * 获取用户未阅读公告（排除已撤回）
 	 * @param tsysUser
 	 * @param state 阅读状态  0未阅读 1 阅读  -1全部
 	 * @return
-	 * @author fuce
-	 * @Date 2019年9月8日 上午3:36:21
 	 */
 	public List<SysNotice> getuserNoticeNotRead(TsysUser tsysUser,int state){
 		List<SysNotice> notices=new ArrayList<>();
@@ -222,40 +281,140 @@ public class SysNoticeService implements BaseService<SysNotice, SysNoticeExample
 				ids.add(sysNoticeUser.getNoticeId());
 			}
 			SysNoticeExample noticeExample = new SysNoticeExample();
-			noticeExample.createCriteria().andIdIn(ids);
+			// 排除已撤回的公告
+			noticeExample.createCriteria().andIdIn(ids).andStatusNotEqualTo(1);
 			notices=sysNoticeMapper.selectByExample(noticeExample);
 		}
 		return notices;
 	}
-	
-	
+
+
 	/**
-	 * 根据公告id把当前用户的公告置为以查看
+	 * 根据公告id把当前用户的公告置为已查看（幂等，已撤回不可读）
 	 * @param noticeid
-	 * @author fuce
-	 * @Date 2019年9月8日 下午7:14:19
 	 */
 	public void editUserState(String noticeid) {
+		// 检查公告是否存在且未撤回
+		SysNotice notice = sysNoticeMapper.selectByPrimaryKey(noticeid);
+		if(notice == null || notice.getStatus() != null && notice.getStatus() == 1) {
+			return;
+		}
 		//SysNoticeUser
 		SysNoticeUserExample sysNoticeUserExample=new SysNoticeUserExample();
 		sysNoticeUserExample.createCriteria().andNoticeIdEqualTo(noticeid).andUserIdEqualTo(SaTokenUtil.getUserId());
 		List<SysNoticeUser> noticeUsers= sysNoticeUserMapper.selectByExample(sysNoticeUserExample);
 		for (SysNoticeUser sysNoticeUser : noticeUsers) {
+			// 幂等：已读则跳过
+			if(sysNoticeUser.getState() != null && sysNoticeUser.getState() == 1) {
+				continue;
+			}
 			sysNoticeUser.setState(1);
-			sysNoticeUserMapper.updateByPrimaryKey(sysNoticeUser);
+			sysNoticeUser.setReadTime(new Date());
+			sysNoticeUserMapper.updateByPrimaryKeySelective(sysNoticeUser);
 		}
 	}
 
 	/**
-	 * 获取最新8条公告
+	 * 撤回公告
+	 * @param noticeId 公告ID
+	 * @return 影响行数
+	 */
+	public int withdraw(String noticeId) {
+		SysNotice notice = sysNoticeMapper.selectByPrimaryKey(noticeId);
+		if(notice == null) {
+			return 0;
+		}
+		// 只有正常状态的公告可以撤回
+		if(notice.getStatus() != null && notice.getStatus() == 1) {
+			return 0;
+		}
+		SysNotice update = new SysNotice();
+		update.setId(noticeId);
+		update.setStatus(1);
+		return sysNoticeMapper.updateByPrimaryKeySelective(update);
+	}
+
+	/**
+	 * 统计用户未读公告数量
+	 * @param userId 用户ID
+	 * @return 未读数量
+	 */
+	public int countUnread(String userId) {
+		return noticeDao.countUnreadByUserId(userId);
+	}
+
+	/**
+	 * 用户公告分页列表
+	 * @param userId 用户ID
+	 * @param tablepar 分页参数
+	 * @param title 标题搜索
+	 * @return 分页结果
+	 */
+	public PageInfo<SysNotice> getUserNoticePage(String userId, Tablepar tablepar, String title) {
+		PageHelper.startPage(tablepar.getPage(), tablepar.getLimit());
+		List<SysNotice> list = noticeDao.selectUserNoticePage(userId, title);
+		return new PageInfo<>(list);
+	}
+
+	/**
+	 * 用户公告详情（查看时自动标记已读）
+	 * @param noticeId 公告ID
+	 * @param userId 用户ID
+	 * @return 公告详情，不存在或已撤回返回null
+	 */
+	@Transactional
+	public SysNotice getUserNoticeDetail(String noticeId, String userId) {
+		SysNotice notice = noticeDao.selectUserNoticeDetail(noticeId, userId);
+		if(notice != null) {
+			// 查看时自动标记已读
+			markRead(noticeId, userId);
+			// 刷新state为已读
+			notice.setState(1);
+		}
+		return notice;
+	}
+
+	/**
+	 * 标记已读（幂等）
+	 * @param noticeId 公告ID
+	 * @param userId 用户ID
+	 */
+	public void markRead(String noticeId, String userId) {
+		SysNoticeUserExample example = new SysNoticeUserExample();
+		example.createCriteria().andNoticeIdEqualTo(noticeId).andUserIdEqualTo(userId);
+		List<SysNoticeUser> list = sysNoticeUserMapper.selectByExample(example);
+		for(SysNoticeUser nu : list) {
+			// 幂等：已读则跳过
+			if(nu.getState() != null && nu.getState() == 1) {
+				continue;
+			}
+			nu.setState(1);
+			nu.setReadTime(new Date());
+			sysNoticeUserMapper.updateByPrimaryKeySelective(nu);
+		}
+	}
+
+	/**
+	 * 获取公告已读统计
+	 * @param noticeId 公告ID
+	 * @return 统计VO
+	 */
+	public NoticeReadStatVO getReadStats(String noticeId) {
+		return noticeDao.selectReadStatByNoticeId(noticeId);
+	}
+
+	/**
+	 * 获取最新8条公告（排除已撤回）
 	 * @return
 	 */
 	public List<SysNotice>  getNEW(){
-	        SysNoticeExample testExample=new SysNoticeExample();
-	        testExample.setOrderByClause("id DESC");
-	        PageHelper.startPage(1, 8);
-	        List<SysNotice> list= sysNoticeMapper.selectByExample(testExample);
-	        return  list;
+        SysNoticeExample testExample=new SysNoticeExample();
+        SysNoticeExample.Criteria criteria = testExample.createCriteria();
+        criteria.andStatusNotEqualTo(1);
+        testExample.setOrderByClause("id DESC");
+        PageHelper.startPage(1, 8);
+        List<SysNotice> list= sysNoticeMapper.selectByExample(testExample);
+        return  list;
 	 }
 
 
