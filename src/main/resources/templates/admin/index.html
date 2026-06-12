@@ -80,6 +80,15 @@
         let popup = layui.popup;
         admin.render();
 
+        // 实时刷新未读公告数（覆盖 session 快照，避免撤回/已读后对不上）
+        $.get(rootPath + '/NoticeApiController/unreadCount', function(res){
+            if(res && res.code === 200){
+                var badge = $('#menu-msg .layui-badge');
+                badge.text(res.data || 0);
+                if(res.data > 0){ badge.show(); } else { badge.hide(); }
+            }
+        });
+
         $('#headImg').attr("src",makeHeadImgByUserName([[${session.sessionUserName}]]));
 
          $("#menu-msg").click(function(){

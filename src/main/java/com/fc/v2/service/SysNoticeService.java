@@ -1,9 +1,10 @@
 package com.fc.v2.service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -130,8 +131,82 @@ public class SysNoticeService implements BaseService<SysNotice, SysNoticeExample
 
 
 	@Override
+	@Transactional
 	public int updateByPrimaryKeySelective(SysNotice record) {
-		return sysNoticeMapper.updateByPrimaryKeySelective(record);
+		// 加载旧记录，比较范围是否变更
+		SysNotice existing = sysNoticeMapper.selectByPrimaryKey(record.getId());
+		int result = sysNoticeMapper.updateByPrimaryKeySelective(record);
+
+		// 如果提交了 scopeType，检查范围是否变化
+		Integer newScopeType = record.getScopeType();
+		if(newScopeType != null && existing != null) {
+			Integer oldScopeType = existing.getScopeType() != null ? existing.getScopeType() : 0;
+			String oldScopeIds = existing.getScopeIds();
+			String newScopeIds = record.getScopeIds();
+
+			boolean scopeChanged = !newScopeType.equals(oldScopeType);
+			if(!scopeChanged && newScopeIds != null) {
+				scopeChanged = !newScopeIds.equals(oldScopeIds != null ? oldScopeIds : "");
+			}
+
+			if(scopeChanged) {
+				syncNoticeRecipients(record.getId(), newScopeType, newScopeIds);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * 同步公告接收人快照（diff 方式：删除多余、补入新增、保留已有的已读状态）
+	 */
+	private void syncNoticeRecipients(String noticeId, Integer scopeType, String scopeIds) {
+		// 1. 查询现有接收人
+		SysNoticeUserExample existingExample = new SysNoticeUserExample();
+		existingExample.createCriteria().andNoticeIdEqualTo(noticeId);
+		List<SysNoticeUser> existingRecords = sysNoticeUserMapper.selectByExample(existingExample);
+		Set<String> existingUserIds = new HashSet<>();
+		for(SysNoticeUser nu : existingRecords) {
+			existingUserIds.add(nu.getUserId());
+		}
+
+		// 2. 解析新目标用户
+		List<String> newTargetList = resolveTargetUserIds(scopeType, scopeIds);
+		Set<String> newUserIds = new HashSet<>(newTargetList);
+
+		// 3. 计算差异
+		// 需要移除的：在旧集合但不在新集合
+		Set<String> toRemove = new HashSet<>(existingUserIds);
+		toRemove.removeAll(newUserIds);
+		// 需要新增的：在新集合但不在旧集合
+		Set<String> toAdd = new HashSet<>(newUserIds);
+		toAdd.removeAll(existingUserIds);
+
+		// 4. 删除不再属于目标范围的接收人记录
+		if(!toRemove.isEmpty()) {
+			SysNoticeUserExample deleteExample = new SysNoticeUserExample();
+			deleteExample.createCriteria()
+				.andNoticeIdEqualTo(noticeId)
+				.andUserIdIn(new ArrayList<>(toRemove));
+			sysNoticeUserMapper.deleteByExample(deleteExample);
+		}
+
+		// 5. 为新进入目标范围的用户创建记录
+		if(!toAdd.isEmpty()) {
+			List<SysNoticeUser> newRecords = new ArrayList<>();
+			for(String userId : toAdd) {
+				SysNoticeUser nu = new SysNoticeUser();
+				nu.setId(SnowflakeIdWorker.getUUID());
+				nu.setNoticeId(noticeId);
+				nu.setUserId(userId);
+				nu.setState(0);
+				newRecords.add(nu);
+			}
+			int batchSize = 500;
+			for(int i = 0; i < newRecords.size(); i += batchSize) {
+				int end = Math.min(i + batchSize, newRecords.size());
+				noticeDao.batchInsertNoticeUser(newRecords.subList(i, end));
+			}
+		}
 	}
 
 	/**
@@ -196,18 +271,34 @@ public class SysNoticeService implements BaseService<SysNotice, SysNoticeExample
 			return userIds;
 		} else if(scopeType == 1) {
 			// 指定角色
-			List<String> roleIds = Arrays.asList(scopeIds.split(","));
+			List<String> roleIds = new ArrayList<>();
+			for(String s : scopeIds.split(",")) {
+				String trimmed = s.trim();
+				if(!trimmed.isEmpty()) {
+					roleIds.add(trimmed);
+				}
+			}
 			return noticeDao.selectUserIdsByRoleIds(roleIds);
 		} else if(scopeType == 2) {
 			// 指定部门
 			List<Integer> deptIds = new ArrayList<>();
 			for(String s : scopeIds.split(",")) {
-				deptIds.add(Integer.parseInt(s.trim()));
+				String trimmed = s.trim();
+				if(!trimmed.isEmpty()) {
+					deptIds.add(Integer.parseInt(trimmed));
+				}
 			}
 			return noticeDao.selectUserIdsByDeptIds(deptIds);
 		} else if(scopeType == 3) {
 			// 指定用户
-			return Arrays.asList(scopeIds.split(","));
+			List<String> userIds = new ArrayList<>();
+			for(String s : scopeIds.split(",")) {
+				String trimmed = s.trim();
+				if(!trimmed.isEmpty()) {
+					userIds.add(trimmed);
+				}
+			}
+			return userIds;
 		}
 		return new ArrayList<>();
 	}

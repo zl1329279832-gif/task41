@@ -26,6 +26,25 @@
                 </div>
 
                 <div class="layui-form-item">
+                    <label class="layui-form-label">发布范围</label>
+                    <div class="layui-input-block">
+                        <select name="scopeType" id="scopeType" lay-filter="scopeType">
+                            <option value="0">全部用户</option>
+                            <option value="1">指定角色</option>
+                            <option value="2">指定部门</option>
+                            <option value="3">指定用户</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="layui-form-item" id="scopeIdsDiv" style="display:none;">
+                    <label class="layui-form-label">目标ID</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="scopeIds" id="scopeIds" placeholder="多个ID用逗号分隔" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
                     <label class="layui-form-label">内容</label>
                     <div class="layui-input-block">
                         <textarea placeholder="请输入内容" name="content" class="layui-textarea"></textarea>
@@ -80,8 +99,17 @@
 
 
 
+        // 切换发布范围时显示/隐藏目标ID输入框
+        form.on('select(scopeType)', function(data){
+            document.getElementById('scopeIdsDiv').style.display = (data.value === '0') ? 'none' : '';
+        });
+
         //保存
         form.on('submit(sysInterUrl-save)', function (data) {
+            // scopeType=0 时清空 scopeIds 避免传脏数据
+            if(data.field.scopeType === '0') {
+                data.field.scopeIds = '';
+            }
             $.ajax({
                 url: MODULE_PATH+'/add',
                 data: data.field,
